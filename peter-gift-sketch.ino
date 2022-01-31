@@ -15,6 +15,9 @@
 #define DELAY 1
 #define PRINT 0
 
+#define PARTY_MODE_SPEED 7
+
+// Party mode counter.
 int k;
 
 void setup() {
@@ -29,6 +32,7 @@ void setup() {
 }
 
 void loop() {
+  // Set brightness based on the value from the potentiometer.
   int potentiometer = analogRead(A0);
   int brightness = map(potentiometer, 0, 2048, MIN, MAX);
   #ifdef PRINT
@@ -36,23 +40,23 @@ void loop() {
   Serial.print(potentiometer);
   #endif
 
+  // If the pot reads about 1000, trigger party mode.
   if (potentiometer > 1000) {
-    k = (k+7)%360;
-    // uncomment the mode (or modes) you need below.
-    // with all six PWM outputs connected you may use 2 modes, change one 0 to 1.
-    
-//    trueHSV(CAR, k);
-    
-//    powerHSV(CAR, k);
-    
+    k = (k+PARTY_MODE_SPEED)%360;
+
     sineLED(CAR, k);
 
+    // While the car is going through the hue wave, adjust the snow to
+    // flash brightness in sequence.
     int b = min(359, k >= 180 ? (359 - k) * 2 : k * 2);
     b = map(b, 0, 359, 0, 128);
-    setRGBpoint(SNOW, b, b, b, false);
+    setRGBpoint(SNOW, b, b, b, /* print */ false);
   } else {
-    setRGBpoint(CAR, 0, 0, brightness, true);
-    setRGBpoint(SNOW, brightness, brightness, brightness, false);
+    // When not in party mode set the car and snow brightness to the level
+    // determined by the pot.
+    // We only want the car to be blue.
+    setRGBpoint(CAR, 0, 0, brightness, /* print */ true);
+    setRGBpoint(SNOW, brightness, brightness, brightness, /* print */ false);
   }
 
   #ifdef PRINT
@@ -62,11 +66,7 @@ void loop() {
   delay(1);
 }
 
-
-// uint8_t is the same as byte
-// uint16_t is unsigned int
-// I just noticed that I mixed these in this sketch, sorry
-
+// Lookup table where lights[i] == sin(i) (where i is in degrees).
 const uint8_t lights[360]={
   0,   0,   0,   0,   0,   1,   1,   2, 
   2,   3,   4,   5,   6,   7,   8,   9, 
